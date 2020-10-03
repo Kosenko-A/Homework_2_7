@@ -12,13 +12,13 @@ public class ClientApplicationOne {
             DataInputStream in = new DataInputStream(clientSocket.getInputStream());
             DataOutputStream out = new DataOutputStream(clientSocket.getOutputStream());
 
-            out.writeUTF("-auth l1 p2");
+            out.writeUTF("-auth l1 p1");
             new Thread(new Runnable() {
                 @Override
                 public void run() {
                     while (true) {
                         try {
-                            String message = in.readUTF();
+                            String message = in.readUTF();                                               //????
                             System.out.println(message);
                             if (message.contains("Incorrect login or password")) {
                                 out.writeUTF("-auth l1 p1");

@@ -18,84 +18,79 @@ public class ClientHandler {
         return name;
     }
 
-    public ClientHandler(Socket clientSocket, Server server)  {
+    public ClientHandler(Socket clientSocket, Server server) {
         this.clientSocket = clientSocket;
 
         try {
-            this.in = new DataInputStream(clientSocket.getInputStream());
-            this.out = new DataOutputStream(clientSocket.getOutputStream());
-            start();
-        } catch (IOException e){
+            if (authenticate()) {
+                this.in = new DataInputStream(clientSocket.getInputStream());
+                this.out = new DataOutputStream(clientSocket.getOutputStream());
+                start();
+            }
+        } catch (IOException e) {
             e.printStackTrace();
         }
         this.server = server;
     }
-    public void start(){
-       new Thread(new Runnable() {
-           @Override
-           public void run(){
-               try {
-                   authenticate();
-                   readMessage();
-               } catch (IOException e) {
-                   e.printStackTrace();
-               } finally {
-                   closeConnection();
-               }
-           }
-        }).start();
 
-    }
-    public void authenticate() throws IOException {
-        TimerTask time = new TimerTask(){
+    public void start() {
+        new Thread(new Runnable() {
             @Override
             public void run() {
                 try {
-                    sendMessage("You are disconnect");
-                    serverStop();
-                    clientSocket.close();
+                    if(authenticate()){
+                    //authenticate();
+                    readMessage();
+                    }                                                                 //!!!!!!!!!!!!!!
                 } catch (IOException e) {
-                   e.printStackTrace();
+                    e.printStackTrace();
+                } finally {
+                    closeConnection();
                 }
             }
-        };
-        Timer timer = new Timer();
-        timer.schedule(time, 120000);
-        while (true){
+        }).start();
 
+    }
+
+    public boolean authenticate() throws IOException {
+        makeTimer();
+        while (true) {
             String loginInfo = in.readUTF();
-            if (loginInfo.startsWith("-auth")){
+            if (loginInfo.startsWith("-auth")) {
                 String[] splittedLoginInfo = loginInfo.split("//s");
                 AuthenticationService.Client maybeClient = server.getAuthenticationService().findByLoginAndPassword(
-                        splittedLoginInfo [1],
-                        splittedLoginInfo [2]
+                        splittedLoginInfo[1],
+                        splittedLoginInfo[2]
                 );
-                if (maybeClient != null){
-                    if (!server.chechLogin(maybeClient.getName())){
+                if (maybeClient != null) {
+                    if (!server.chechLogin(maybeClient.getName())) {
                         sendMessage("status: auth ok");
                         name = maybeClient.getName();
-                        server.broadcast(String.format("%s came in",name));
+                        server.broadcast(String.format("%s came in", name));
                         System.out.println("Client auth complited");
                         server.subscribe(this);
-                        return;
+                        return true;
                     } else {
                         sendMessage(String.format("%s already logged in", maybeClient.getName()));
+                        return false;
                     }
                 } else {
                     sendMessage("Incorrect login or password");
+                    return false;
                 }
             }
         }
 
     }
-    public void closeConnection(){
-            server.unsubscribe(this);
-            server.broadcast(String.format("%s left", name));
-       // try {
-           // in.close();
-       // } catch (IOException e) {
-          //  e.printStackTrace();
-       // }
+
+    public void closeConnection() {
+        server.unsubscribe(this);
+        server.broadcast(String.format("%s left", name));
+        // try {
+        // in.close();
+        // } catch (IOException e) {
+        //  e.printStackTrace();
+        // }
         try {
             out.close();
         } catch (IOException e) {
@@ -107,6 +102,7 @@ public class ClientHandler {
             e.printStackTrace();
         }
     }
+
     public void readMessage() throws IOException {
         while (true) {
             String message = in.readUTF();
@@ -119,14 +115,33 @@ public class ClientHandler {
         }
 
     }
-    public void sendMessage (String message){
+
+    public void sendMessage(String message) {
         try {
             out.writeUTF(message);
-        }catch (IOException e){
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }
-    public void serverStop(){
+
+    public void serverStop() {
         server.unsubscribe(this);
+    }
+
+    public void makeTimer() {
+        TimerTask time = new TimerTask() {
+            @Override
+            public void run() {
+                try {
+                    sendMessage("You are disconnect");
+                    serverStop();
+                    clientSocket.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        };
+        Timer timer = new Timer();
+        timer.schedule(time, 120000);
     }
 }
