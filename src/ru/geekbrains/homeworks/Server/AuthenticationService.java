@@ -53,6 +53,7 @@ public class AuthenticationService {
         }
         public boolean findByLoginAndPassword (String login, String password) throws SQLException {
             Connection connection = Main.getConnection();
+
             try {
                 PreparedStatement statement = connection.prepareStatement(
                         "SELECT * FROM clients WHERE login = ? AND password = ?");
