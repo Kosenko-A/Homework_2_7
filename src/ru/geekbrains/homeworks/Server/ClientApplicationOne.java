@@ -7,6 +7,7 @@ import java.net.Socket;
 
 public class ClientApplicationOne {
     public static void main(String[] args) {
+        new Window();
         try {
             Socket clientSocket = new Socket("localhost", 8888);
             DataInputStream in = new DataInputStream(clientSocket.getInputStream());

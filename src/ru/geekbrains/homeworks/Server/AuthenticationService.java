@@ -2,21 +2,11 @@ package ru.geekbrains.homeworks.Server;
 
 import ru.geekbrains.homeworks.Main;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.Set;
 
 public class AuthenticationService {
     private Set<Client> clients;
-    public AuthenticationService () {
-        clients = Set.of(
-                new Client(1, "l1", "p1", "user1"),
-                new Client(2,"l2", "p2", "user2"),
-                new Client(3,"l3", "p3", "user3")
-        );
-    }
 
     public Client findByLoginAndPassword(String login, String password){
         for (Client c: clients){
@@ -28,32 +18,40 @@ public class AuthenticationService {
     }
 
     static public class Client {
-        private long id;
+        private String name;
         private String login;
         private String password;
-        private String name;
 
-        public Client(long id, String login, String password, String name) {
-            this.id = id;
+        public Client(String name, String login, String password) {
+            this.name = name;
             this.login = login;
             this.password = password;
-            this.name = name;
         }
 
-        public long getId(){return id;}
+        public String getName () {return name;}
         public String getLogin (){
             return login;
         }
         public String getPassword (){
             return password;
         }
-        public String getName (){
-            return name;
+
+        public void addToSql (String name, String login, String password) throws Exception{
+            Connection connection = Main.getConnection();
+            Statement statement = connection.createStatement();
+            statement.executeUpdate("INSERT INTO clients (id, name, login, password) VALUES (1, name, login, password);");
         }
+
     }
 
-    public class ClientService{
-        public Client findByLoginAndPassword (String login, String password) throws SQLException {
+    public static class ClientService{
+        private String login;
+        private String password;
+        public ClientService(String login, String password){
+            this.login = login;
+            this.password = password;
+        }
+        public boolean findByLoginAndPassword (String login, String password) throws SQLException {
             Connection connection = Main.getConnection();
             try {
                 PreparedStatement statement = connection.prepareStatement(
@@ -62,14 +60,14 @@ public class AuthenticationService {
                 statement.setString(2, password);
                 ResultSet rs = statement.executeQuery();
                 if(rs.next()){
-                    return new Client(
-                            rs.getLong("id"),
+                    return true;
+                    /*return new Client(
+                            rs.getString("name"),
                             rs.getString("login"),
-                            rs.getString("password"),
-                            rs.getString("name")
-                    );
+                            rs.getString("password")
+                    );*/
                 }
-                return null;
+                return false;
             } catch (SQLException e){
                 throw new RuntimeException("SWW", e);
             } finally {
@@ -78,3 +76,5 @@ public class AuthenticationService {
         }
     }
 }
+
+

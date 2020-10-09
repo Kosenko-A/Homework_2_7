@@ -1,8 +1,6 @@
 package ru.geekbrains.homeworks.Server;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.net.Socket;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -13,12 +11,13 @@ public class ClientHandler {
     private DataInputStream in;
     private DataOutputStream out;
     private Server server;
+    FileWriter fw = new FileWriter("output.txt");
 
     public String getName() {
         return name;
     }
 
-    public ClientHandler(Socket clientSocket, Server server) {
+    public ClientHandler(Socket clientSocket, Server server) throws IOException {
         this.clientSocket = clientSocket;
 
         try {
@@ -117,8 +116,15 @@ public class ClientHandler {
     }
 
     public void sendMessage(String message) {
+        int point = 0;
         try {
             out.writeUTF(message);
+            point++;
+            while (point<=100){
+                BufferedWriter bufferedWriter = new BufferedWriter(fw);
+                bufferedWriter.newLine();
+                bufferedWriter.write(message);
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }
